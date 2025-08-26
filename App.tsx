@@ -1,3 +1,4 @@
+"use client";
 import React, { useMemo, useState } from "react";
 
 // ----------------------------------------------
@@ -862,7 +863,7 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
               <span className="px-3 py-1 rounded-full bg-gray-100">리롤 토큰: <b>{tokens}</b></span>
               <span className="px-3 py-1 rounded-full bg-gray-100">이름-슬롯: '옵션1'→<b>{sw ? "슬롯2" : "슬롯1"}</b>, '옵션2'→<b>{sw ? "슬롯1" : "슬롯2"}</b></span>
               <span className="px-3 py-1 rounded-full bg-gray-100">비용 보정: <b>{costAdj}%</b></span>
-              <button onClick={rerollSet} disabled={tokens <= 0 || !hasRolled} className={`px-3 py-1 rounded-xl border ${tokens>0 && hasRolled?"bg-yellow-50 hover:bg-yellow-100":"opacity-50"}`}>가공 효과 변경(리롤)</button>
+              <button type="button" onClick={rerollSet} disabled={tokens <= 0 || !hasRolled} className={`px-3 py-1 rounded-xl border ${tokens>0 && hasRolled?"bg-yellow-50 hover:bg-yellow-100":"opacity-50"}`}>가공 효과 변경(리롤)</button>
             </div>
 
             {isSuccess({ we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type }, targets) ? (
@@ -876,7 +877,7 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
             ) : (
               <div className="grid md:grid-cols-4 gap-3">
                 {currentIdx4.map((i) => (
-                  <button key={i} onClick={() => applyEffectByIndex(i)} className="text-left p-4 rounded-2xl border hover:shadow transition">
+                  <button type="button" key={i} onClick={() => applyEffectByIndex(i)} className="text-left p-4 rounded-2xl border hover:shadow transition">
                     <div className="text-sm text-gray-500">적용 가능 효과</div>
                     <div className="mt-1 font-semibold">{labelForEffect(E[i], slot1Type, slot2Type)}</div>
                     <div className="mt-1 text-xs text-gray-500">클릭 시 적용 & 가공 1회 소모</div>
