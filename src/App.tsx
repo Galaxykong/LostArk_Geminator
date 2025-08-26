@@ -5,6 +5,7 @@ import React, { useMemo, useState } from "react";
 // - Tailwind UI 래퍼 포함 (min-h-screen / max-w-6xl)
 // - 프리셋(공격A&B=5 / 서포트A&B=5), 이름-슬롯 스왑, 리롤 락(첫 가공 전 금지)
 // - 가속 근사(가중치 기대값) 적용으로 빠른 계산
+// - [NEW] "확률 계산하기" 아래에 시뮬레이션 적용 버튼 UI 추가
 // ----------------------------------------------
 
 // ================ 모델 타입 ================
@@ -119,8 +120,7 @@ function isSuccess(s: State, tg: Targets): boolean {
     if (!ty || !val) return true; // 미설정이면 통과
     const v = valueByTypeDyn(s, ty);
     return v !== null && v >= val;
-  }
-;
+  };
 
   return checkOne(tg.target1Type, tg.target1Val) && checkOne(tg.target2Type, tg.target2Val);
 }
@@ -130,7 +130,7 @@ function weightIfEligible(eff: Effect, s: State, attemptsLeft: number): number {
   const { v1, v2 } = currentNameValues(s);
   switch (eff.kind) {
     case "WE_PLUS": {
-      const tier = eff.plusTier!; // 1~4
+      const tier = eff.plusTier!;
       if (tier === 1 && s.we === 5) return 0;
       if (tier === 2 && s.we >= 4) return 0;
       if (tier === 3 && s.we >= 3) return 0;
@@ -189,7 +189,7 @@ function sample4WeightedIndices(state: State, attemptsLeft: number): number[] {
   const weightsMutable = [...weights];
   for (let k = 0; k < 4; k++) {
     const total = sum(weightsMutable);
-    if (total <= 0) break; // 비정상 상황 (모두 불가)
+    if (total <= 0) break;
     let r = Math.random() * total;
     let chosen = -1;
     for (let i = 0; i < weightsMutable.length; i++) {
@@ -200,9 +200,8 @@ function sample4WeightedIndices(state: State, attemptsLeft: number): number[] {
     }
     if (chosen === -1) break;
     picks.push(chosen);
-    weightsMutable[chosen] = 0; // 비복원
+    weightsMutable[chosen] = 0;
   }
-  // 보호: 4개 미만일 경우 유효한 나머지로 채움
   if (picks.length < 4) {
     const rest = weights
       .map((w, i) => ({ w, i }))
@@ -274,7 +273,6 @@ function applyEffect(s: State, eff: Effect, changeTo?: OptionType): { next: Stat
       costAdj = clampCost(costAdj - 100);
       break;
     case "HOLD":
-      // 변화 없음
       break;
     case "REROLL_PLUS":
       addToken = (eff.amount || 1);
@@ -288,7 +286,6 @@ function keyForMemo(s: State, N: number, C: number, tg: Targets) {
   const optPart = tg.includeOptions ? `|o1:${s.o1}|o2:${s.o2}|sw:${s.sw ? 1 : 0}|t1:${s.t1Type}|t2:${s.t2Type}` : "";
   return `we:${s.we}|pt:${s.pt}${optPart}|cost:${s.costAdj}|N:${N}|C:${C}|incOpt:${tg.includeOptions}|tw:${tg.we}|tp:${tg.pt}|g1:${tg.target1Type ?? "-"}:${tg.target1Val ?? "-"}|g2:${tg.target2Type ?? "-"}:${tg.target2Val ?? "-"}`;
 }
-
 
 // ================ 엔진(DP + 가속 근사) ================
 function buildProbabilityEngine(targets: Targets) {
@@ -370,7 +367,6 @@ function buildProbabilityEngine(targets: Targets) {
         fAll[i] = P_pre(next, N - 1, C + addToken, false);
       }
     }
-    // 현재 화면의 4개는 실제로 고정되어 있으므로 평균은 그대로 사용
     return avg(currentIdx4.map((i) => fAll[i]));
   }
 
@@ -389,17 +385,17 @@ function labelForEffect(e: Effect, slot1Type: OptionType, slot2Type: OptionType)
     case "O2_MINUS1":
       return `${slot2Type} Lv. -1`;
     default:
-      return e.label; // WE/PT/비용/상태/리롤 등은 고정 라벨 유지
+      return e.label;
   }
 }
 
 const fmtPct = (x: number) => `${(x * 100).toFixed(2)}%`;
 
 export default function App() {
-  // 공통 입력/셀렉트 스타일 (브라우저 기본 스타일 제거 + 예쁜 포커스)
-  const inputCls = "w-full mt-1 rounded-xl bg-white ring-1 ring-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+  const inputCls =
+    "w-full mt-1 rounded-xl bg-white ring-1 ring-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
   const selectCls = inputCls + " appearance-none";
-  // 기본 입력값
+
   const [rarity, setRarity] = useState<"고급" | "희귀" | "영웅">("고급");
   const defaultAttempts = rarity === "고급" ? 5 : rarity === "희귀" ? 7 : 9;
   const defaultTokens = rarity === "고급" ? 0 : rarity === "희귀" ? 1 : 2;
@@ -408,33 +404,27 @@ export default function App() {
 
   const [we, setWe] = useState<number>(1);
   const [pt, setPt] = useState<number>(1);
-  
-  // 모바일 입력 개선: 현재 의지력/포인트 입력용 문자열 버퍼
   const [weStr, setWeStr] = useState<string>(String(we));
   const [ptStr, setPtStr] = useState<string>(String(pt));
   React.useEffect(() => { setWeStr(String(we)); }, [we]);
   React.useEffect(() => { setPtStr(String(pt)); }, [pt]);
-const [o1, setO1] = useState<number>(1);
+
+  const [o1, setO1] = useState<number>(1);
   const [o2, setO2] = useState<number>(1);
   const [sw, setSw] = useState<boolean>(false);
-  const [costAdj, setCostAdj] = useState<number>(0); // -100~+100
+  const [costAdj, setCostAdj] = useState<number>(0);
 
-  // 슬롯 타입
   const [slot1Type, setSlot1Type] = useState<OptionType>("공격형 A");
   const [slot2Type, setSlot2Type] = useState<OptionType>("공격형 B");
 
-  // 목표
   const [tWe, setTWe] = useState<number>(5);
   const [tPt, setTPt] = useState<number>(5);
-  
-  // 모바일에서 숫자 지울 때 '1'로 강제되는 문제 방지용 입력 버퍼
   const [tWeStr, setTWeStr] = useState<string>("5");
   const [tPtStr, setTPtStr] = useState<string>("5");
-
-  // 모델 값이 바뀌면 문자열 버퍼도 동기화 (외부에서 값이 바뀌는 경우 대비)
   React.useEffect(() => { setTWeStr(String(tWe)); }, [tWe]);
   React.useEffect(() => { setTPtStr(String(tPt)); }, [tPt]);
-const [includeOptions, setIncludeOptions] = useState<boolean>(false);
+
+  const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   const [goalPreset, setGoalPreset] = useState<GoalPreset>("없음");
 
   // 현재 화면 4개 (수동 변경 가능)
@@ -453,6 +443,7 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   }, [idx0, idx1, idx2, idx3]);
 
   // 레어리티 바뀌면 기본 시도/토큰 갱신 + 첫 가공 상태 리셋
+  const [hasRolled, setHasRolled] = useState<boolean>(false);
   React.useEffect(() => {
     const v = rarity === "고급" ? 5 : rarity === "희귀" ? 7 : 9;
     const tks = rarity === "고급" ? 0 : rarity === "희귀" ? 1 : 2;
@@ -462,6 +453,7 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   }, [rarity]);
 
   // 목표 프리셋을 Targets에 반영
+  interface Targets { we: number; pt: number; includeOptions: boolean; target1Type?: OptionType; target1Val?: number; target2Type?: OptionType; target2Val?: number; }
   const targets: Targets = useMemo(() => {
     let t: Targets = { we: tWe, pt: tPt, includeOptions };
     if (includeOptions) {
@@ -477,10 +469,9 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   // 엔진 준비
   const engine = useMemo(() => buildProbabilityEngine(targets), [targets]);
 
-  // 계산 결과 및 진행 여부
+  // 계산 결과
   const [computed, setComputed] = useState<boolean>(false);
   const [result, setResult] = useState<null | { pRollNow: number; pChangeNow: number; pFromScratch: number; recommend: "roll" | "change" }>(null);
-  const [hasRolled, setHasRolled] = useState<boolean>(false);
 
   const rollVsAllClass = useMemo(() => {
     if (!result) return "text-gray-900";
@@ -499,8 +490,6 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   }
 
   function compute() {
-    
-
     const s: State = { we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type };
     const lock = !hasRolled; // 첫 가공 전에는 리롤 불가
     const pRollNow = engine.P_roll_now(s, attempts, tokens, currentIdx4);
@@ -508,6 +497,9 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
     const pFromScratch = engine.P_pre(s, attempts, tokens, lock);
     const recommend = (!lock && tokens > 0 && pChangeNow > pRollNow) ? "change" : "roll";
     setResult({ pRollNow, pChangeNow, pFromScratch, recommend });
+
+    // [NEW] 계산 직후 현재 4개 후보를 가중치로 생성해 아래 버튼으로 보여줌
+    regenCurrent4Weighted();
     setComputed(true);
   }
 
@@ -522,14 +514,21 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
     setO2(next.o2);
     setSw(next.sw);
     setCostAdj(next.costAdj);
-    // 타입 변경(옵션 변경 효과) UI 반영
     setSlot1Type(next.t1Type);
     setSlot2Type(next.t2Type);
     setAttempts((n) => Math.max(0, n - 1));
     if (addToken > 0) setTokens((t) => t + addToken);
     if (!hasRolled) setHasRolled(true);
     regenCurrent4Weighted();
-    
+
+    // 적용 후 즉시 재계산해서 확률/추천 갱신
+    const lock = !hasRolled;
+    const s2: State = { we: next.we, pt: next.pt, o1: next.o1, o2: next.o2, sw: next.sw, costAdj: next.costAdj, t1Type: next.t1Type, t2Type: next.t2Type };
+    const pRollNow = engine.P_roll_now(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), currentIdx4);
+    const pChangeNow = (tokens + (addToken || 0)) > 0 && !lock ? engine.P_pre(s2, Math.max(0, attempts - 1), (tokens + (addToken || 0)) - 1, false) : 0;
+    const pFromScratch = engine.P_pre(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), false);
+    const recommend = (!lock && (tokens + (addToken || 0)) > 0 && pChangeNow > pRollNow) ? "change" : "roll";
+    setResult({ pRollNow, pChangeNow, pFromScratch, recommend });
   }
 
   // 리롤 버튼
@@ -538,27 +537,33 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
     if (!hasRolled) return; // 첫 가공 전 리롤 불가
     setTokens((t) => t - 1);
     regenCurrent4Weighted();
-    
+
+    // 리롤 후에도 최신 확률 업데이트
+    const s: State = { we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type };
+    const pRollNow = engine.P_roll_now(s, attempts, Math.max(0, tokens - 1), currentIdx4);
+    const pChangeNow = Math.max(0, tokens - 1) > 0 ? engine.P_pre(s, attempts, Math.max(0, tokens - 1) - 1, false) : 0;
+    const pFromScratch = engine.P_pre(s, attempts, Math.max(0, tokens - 1), false);
+    const recommend = (Math.max(0, tokens - 1) > 0 && pChangeNow > pRollNow) ? "change" : "roll";
+    setResult({ pRollNow, pChangeNow, pFromScratch, recommend });
   }
 
   // 이름 값 표시(효과 적용 기준)
   const namedO1 = sw ? o2 : o1;
   const namedO2 = sw ? o1 : o2;
 
-  // 프리셋과 슬롯 타입의 불일치 경고 (선택한 목표 타입이 현재 젬 슬롯 타입에 모두 있어야 함)
   const presetMismatch = useMemo(() => {
     if (!includeOptions) return false;
-    if (goalPreset === "공격형 A&B 5") return !([slot1Type, slot2Type].includes("공격형 A") && [slot1Type, slot2Type].includes("공격형 B"));
-    if (goalPreset === "서포트형 A&B 5") return !([slot1Type, slot2Type].includes("서포트형 A") && [slot1Type, slot2Type].includes("서포트형 B"));
+    if (goalPreset === "공격형 A&B 5")
+      return !([slot1Type, slot2Type].includes("공격형 A") && [slot1Type, slot2Type].includes("공격형 B"));
+    if (goalPreset === "서포트형 A&B 5")
+      return !([slot1Type, slot2Type].includes("서포트형 A") && [slot1Type, slot2Type].includes("서포트형 B"));
     return false;
   }, [includeOptions, goalPreset, slot1Type, slot2Type]);
 
-  // 드롭다운용 옵션 라벨(슬롯 타입 반영)
   const effectOptions = useMemo(() => (
     E.map((e, i) => ({ value: i, label: labelForEffect(e, slot1Type, slot2Type) }))
   ), [slot1Type, slot2Type]);
 
-  // 목표 조정 시 자동 재계산(최초 1회 계산 이후)
   React.useEffect(() => { if (computed) compute(); }, [tWe, tPt, includeOptions, goalPreset, slot1Type, slot2Type]);
 
   return (
@@ -618,9 +623,10 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
                 />
               </div>
               <div className="col-span-2">
-               <div className="text-xs text-gray-500 border rounded-xl px-3 py-2">
-  첫 번째 효과= <b>옵션1</b>, 두 번째 효과= <b>옵션2</b> 로 간주합니다. "효과 변경"은 해당 효과의 <b>타입 변경</b>(수치는 유지)이며, 이후의 +1/+2/+3/+4와 -1은 <b>바뀐 타입의 이름</b>을 따라 적용됩니다. 모든 능력치는 <b>1~5</b> 범위로 유지됩니다.
-</div>
+                <div className="text-xs text-gray-500 border rounded-xl px-3 py-2">
+                  첫 번째 효과= <b>옵션1</b>, 두 번째 효과= <b>옵션2</b> 로 간주합니다. "효과 변경"은 해당 효과의 <b>타입 변경</b>(수치는 유지)이며,
+                  이후의 +1/+2/+3/+4와 -1은 <b>바뀐 타입의 이름</b>을 따라 적용됩니다. 모든 능력치는 <b>1~5</b> 범위로 유지됩니다.
+                </div>
               </div>
             </div>
 
@@ -807,11 +813,13 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
 
         {/* 실행 */}
         <div className="flex items-center gap-3 mt-6">
-          <button onClick={compute} className="px-5 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700">확률 계산하기</button>
+          <button onClick={compute} className="px-5 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700">
+            확률 계산하기
+          </button>
           <span className="text-gray-500 text-sm">(가속: 가중치 기대값 근사 적용)</span>
         </div>
 
-        {/* 결과 */}
+        {/* 결과 카드들 */}
         {result && (
           <div className="grid md:grid-cols-3 gap-6 mt-6">
             <div className="bg-white rounded-2xl shadow p-5">
@@ -831,6 +839,8 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
             </div>
           </div>
         )}
+
+        {/* 추천 멘트 */}
         {result && (
           <div className="mt-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
             <div className="text-lg font-semibold">추천</div>
@@ -846,6 +856,47 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
                   : "✔ 지금은 리롤 버튼을 누르는 편이 더 유리합니다."}
               </div>
             )}
+          </div>
+        )}
+
+        {/* [NEW] 4) 시뮬레이션 진행: 실제 적용/리롤 버튼 */}
+        {computed && (
+          <div className="bg-white rounded-2xl shadow p-5 mt-6">
+            <h2 className="text-lg font-semibold mb-2">4) 시뮬레이션 진행</h2>
+            <div className="text-xs text-gray-600 mb-3">
+              남은 가공 가능 횟수: <b>{attempts}</b>회 &nbsp;/&nbsp; 리롤 토큰: <b>{tokens}</b>개
+            </div>
+
+            {/* 현재 4가지 후보를 버튼으로 표시 */}
+            <div className="grid md:grid-cols-4 gap-3">
+              {currentIdx4.map((i) => (
+                <button
+                  key={i}
+                  onClick={() => applyEffectByIndex(i)}
+                  disabled={attempts <= 0}
+                  className={`w-full px-3 py-3 rounded-xl border text-left shadow-sm hover:bg-gray-50 disabled:opacity-50`}
+                  title="이 효과를 적용하여 다음 단계로 진행합니다."
+                >
+                  <div className="text-sm font-semibold">{labelForEffect(E[i], slot1Type, slot2Type)}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">({E[i].label})</div>
+                </button>
+              ))}
+            </div>
+
+            {/* 리롤 버튼 */}
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={rerollSet}
+                disabled={tokens <= 0 || !hasRolled}
+                className="px-4 py-2 rounded-xl bg-amber-600 text-white shadow hover:bg-amber-700 disabled:opacity-50"
+                title={hasRolled ? "현재 후보 4개를 새로 뽑습니다. (토큰 1개 소비)" : "첫 가공 전에는 리롤을 사용할 수 없습니다."}
+              >
+                🔁 가공 효과 변경(리롤)
+              </button>
+              <span className="text-xs text-gray-500">
+                {hasRolled ? "리롤은 첫 가공 후부터 사용 가능" : "첫 가공 전에는 리롤 불가"}
+              </span>
+            </div>
           </div>
         )}
       </div>
