@@ -10,17 +10,17 @@ function SupportModal({ open, onClose }: { open: boolean; onClose: () => void })
       <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden">
         <div className="p-5 border-b">
           <div className="text-lg font-semibold">후원하기</div>
-          <div className="text-xs text-gray-500 mt-1">아래 QR을 스캔해서 송금해 주세요.</div>
+          <div className="text-xs text-gray-500 mt-1">소중한 골드 감사드립니다♡ </div>
         </div>
         <div className="p-5 flex flex-col items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}qr.png`} alt="후원 QR" className="w-64 h-64 object-contain rounded-lg border"
-              onError={(e)=>{ (e.currentTarget as HTMLImageElement).alt="QR 이미지를 불러오지 못했습니다. "; }}
+          <img src={`${import.meta.env.BASE_URL}QR.png`} alt="후원 QR" className="w-64 h-64 object-contain rounded-lg border"
+              onError={(e)=>{ (e.currentTarget as HTMLImageElement).alt="이미지를 불러오지 못했습니다. "; }}
             />
 
         </div>
         <div className="px-5 pb-5 flex gap-2">
           <a
-            href={`${import.meta.env.BASE_URL}qr.png`}
+            href={`${import.meta.env.BASE_URL}QR.png`}
             download
             className="flex-1 inline-flex items-center justify-center rounded-xl border px-4 py-2 hover:bg-gray-50"
           >
