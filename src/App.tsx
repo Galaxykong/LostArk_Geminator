@@ -844,24 +844,34 @@ export default function App() {
           </div>
         )}
 
-        {/* 추천 멘트 */}
-        {result && (
-          <div className="mt-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
-            <div className="text-lg font-semibold">추천</div>
-            {result.pRollNow < result.pFromScratch ? (
-              <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
-                ⚠ 현재 가공 성공 확률이 평균 기대값보다 낮습니다.<br/>
-                <b>가공을 중단하실 것을 추천합니다.</b>
-              </div>
-            ) : (
-              <div className="mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
-                {result.recommend === "roll"
-                  ? "✔ 지금은 가공 버튼을 누르는 편이 더 유리합니다."
-                  : "✔ 지금은 리롤 버튼을 누르는 편이 더 유리합니다."}
-              </div>
-            )}
-          </div>
-        )}
+      {/* 추천 멘트 */}
+{result && (
+  <div className="mt-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
+    <div className="text-lg font-semibold">추천</div>
+
+    {(hasRolled && tokens > 0 && result.pRollNow < result.pFromScratch) ? (
+      // ▼ 확률이 평균 기댓값보다 낮지만 리롤 가능할 때: 리롤 추천
+      <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+        ⚠ 현재 가공 성공 확률이 평균 기댓값보다 낮습니다.<br/>
+        <b>리롤을 사용하는 것을 추천합니다.</b> (보유 토큰: {tokens}개)
+      </div>
+    ) : result.pRollNow < result.pFromScratch ? (
+      // ▼ 리롤 불가(첫 가공 전이거나 토큰 0개)일 때만: 중단 추천
+      <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+        ⚠ 현재 가공 성공 확률이 평균 기댓값보다 낮습니다.<br/>
+        <b>가공을 중단하실 것을 추천합니다.</b>
+      </div>
+    ) : (
+      // ▼ 그 외에는 기존 로직대로 roll/change 비교 추천
+      <div className="mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
+        {result.recommend === "roll"
+          ? "✔ 지금은 가공 버튼을 누르는 편이 더 유리합니다."
+          : "✔ 지금은 리롤 버튼을 누르는 편이 더 유리합니다."}
+      </div>
+    )}
+  </div>
+)}
+
 
         {/* [NEW] 4) 시뮬레이션 진행: 실제 적용/리롤 버튼 */}
         {computed && (
