@@ -569,7 +569,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-6 font-sans antialiased">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold mb-3"> 로스트아크 Gem 가공 확률 계산기 By 갤럭시카드 </h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-1">
+  LostArk Geminator
+  <span className="ml-2 text-base md:text-lg text-gray-400 font-normal">
+    Made by 갤럭시카드 @아브렐슈드
+  </span>
+</h1>
         <p className="text-sm md:text-base text-gray-600 mb-6">
           실제 <b>등장 확률</b>과 <b>미등장 조건</b>을 반영한 가중치 모델로 4개 후보를 생성하고, 선택/리롤 전략까지 고려한 목표 달성 확률을 계산합니다.
         </p>
