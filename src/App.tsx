@@ -408,7 +408,13 @@ export default function App() {
 
   const [we, setWe] = useState<number>(1);
   const [pt, setPt] = useState<number>(1);
-  const [o1, setO1] = useState<number>(1);
+  
+  // 모바일 입력 개선: 현재 의지력/포인트 입력용 문자열 버퍼
+  const [weStr, setWeStr] = useState<string>(String(we));
+  const [ptStr, setPtStr] = useState<string>(String(pt));
+  React.useEffect(() => { setWeStr(String(we)); }, [we]);
+  React.useEffect(() => { setPtStr(String(pt)); }, [pt]);
+const [o1, setO1] = useState<number>(1);
   const [o2, setO2] = useState<number>(1);
   const [sw, setSw] = useState<boolean>(false);
   const [costAdj, setCostAdj] = useState<number>(0); // -100~+100
@@ -420,7 +426,15 @@ export default function App() {
   // 목표
   const [tWe, setTWe] = useState<number>(5);
   const [tPt, setTPt] = useState<number>(5);
-  const [includeOptions, setIncludeOptions] = useState<boolean>(false);
+  
+  // 모바일에서 숫자 지울 때 '1'로 강제되는 문제 방지용 입력 버퍼
+  const [tWeStr, setTWeStr] = useState<string>("5");
+  const [tPtStr, setTPtStr] = useState<string>("5");
+
+  // 모델 값이 바뀌면 문자열 버퍼도 동기화 (외부에서 값이 바뀌는 경우 대비)
+  React.useEffect(() => { setTWeStr(String(tWe)); }, [tWe]);
+  React.useEffect(() => { setTPtStr(String(tPt)); }, [tPt]);
+const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   const [goalPreset, setGoalPreset] = useState<GoalPreset>("없음");
 
   // 현재 화면 4개 (수동 변경 가능)
@@ -638,19 +652,83 @@ export default function App() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm text-gray-600">현재 의지력 효율</label>
-                <input type="number" min={1} max={5} className={inputCls} value={we} onChange={(e)=>setWe(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={weStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setWeStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setWeStr(v); setWe(n); }
+                    else { setWeStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(weStr || "1", 10);
+                    const c = clamp15(n);
+                    setWe(c);
+                    setWeStr(String(c));
+                  }}
+                />
               </div>
               <div>
                 <label className="text-sm text-gray-600">목표 의지력 효율</label>
-                <input type="number" min={1} max={5} className={inputCls} value={tWe} onChange={(e)=>setTWe(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={tWeStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setTWeStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setTWeStr(v); setTWe(n); }
+                    else { setTWeStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(tWeStr || "1", 10);
+                    const c = clamp15(n);
+                    setTWe(c);
+                    setTWeStr(String(c));
+                  }}
+                />
               </div>
               <div>
                 <label className="text-sm text-gray-600">현재 포인트</label>
-                <input type="number" min={1} max={5} className={inputCls} value={pt} onChange={(e)=>setPt(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={ptStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setPtStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setPtStr(v); setPt(n); }
+                    else { setPtStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(ptStr || "1", 10);
+                    const c = clamp15(n);
+                    setPt(c);
+                    setPtStr(String(c));
+                  }}
+                />
               </div>
               <div>
                 <label className="text-sm text-gray-600">목표 포인트</label>
-                <input type="number" min={1} max={5} className={inputCls} value={tPt} onChange={(e)=>setTPt(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={tPtStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setTPtStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setTPtStr(v); setTPt(n); }
+                    else { setTPtStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(tPtStr || "1", 10);
+                    const c = clamp15(n);
+                    setTPt(c);
+                    setTPtStr(String(c));
+                  }}
+                />
               </div>
             </div>
 
@@ -757,60 +835,18 @@ export default function App() {
      {result && (
   <div className="mt-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
     <div className="text-lg font-semibold">추천</div>
-    {result.recommend === "roll" ? (
-      <div className="mt-1 text-emerald-800">
-        ✔ 지금은 <span className="font-bold">가공 버튼</span>을 누르는 편이 더 유리합니다.
-      </div>
-    ) : (
-      <div className="mt-1 text-emerald-800">
-        ✔ 지금은 <span className="font-bold">가공 효과 변경</span>을 사용하는 편이 더 유리합니다.
-      </div>
-    )}
-
-    {/* ⬇ 여기가 새로 추가된 경고 문구 */}
-    {result.pRollNow < result.pFromScratch && (
-      <div className="mt-2 text-rose-700">
-        ⚠ 현재 <b>가공</b> 성공 확률이 평균 기대값보다 낮습니다. <b>가공을 중단하실 것을 추천합니다.</b>
-      </div>
-    )}
-  </div>
-)}
-        {/* 시뮬레이션 진행 (클릭 적용) */}
-        {computed && (
-          <div className="bg-white rounded-2xl shadow p-5 mt-6">
-            <h2 className="text-lg font-semibold mb-3">4) 시뮬레이션 진행</h2>
-            <div className="flex flex-wrap gap-3 items-center text-sm text-gray-700 mb-3">
-              <span className="px-3 py-1 rounded-full bg-gray-100">남은 가공 횟수: <b>{attempts}</b></span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">리롤 토큰: <b>{tokens}</b></span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">이름-슬롯: '옵션1'→<b>{sw ? "슬롯2" : "슬롯1"}</b>, '옵션2'→<b>{sw ? "슬롯1" : "슬롯2"}</b></span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">비용 보정: <b>{costAdj}%</b></span>
-              <button onClick={rerollSet} disabled={tokens <= 0 || !hasRolled} className={`px-3 py-1 rounded-xl border ${tokens>0 && hasRolled?"bg-yellow-50 hover:bg-yellow-100":"opacity-50"}`}>가공 효과 변경(리롤)</button>
+        {result && (
+          result.pRollNow < result.pFromScratch ? (
+            <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+              ⚠ 현재 가공 성공 확률이 평균 기대값보다 낮습니다.<br/>
+              <b>가공을 중단하실 것을 추천합니다.</b>
             </div>
-
-            {isSuccess({ we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type }, targets) ? (
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
-                🎉 목표를 달성했습니다! 상태를 바꿔 추가 실험을 진행해 보세요.
-              </div>
-            ) : attempts <= 0 ? (
-              <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800">
-                남은 가공 횟수가 없습니다.
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-4 gap-3">
-                {currentIdx4.map((i) => (
-                  <button key={i} onClick={() => applyEffectByIndex(i)} className="text-left p-4 rounded-2xl border hover:shadow transition">
-                    <div className="text-sm text-gray-500">적용 가능 효과</div>
-                    <div className="mt-1 font-semibold">{labelForEffect(E[i], slot1Type, slot2Type)}</div>
-                    <div className="mt-1 text-xs text-gray-500">클릭 시 적용 & 가공 1회 소모</div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 설명 */}
-      </div>
+          ) : (
+            <div className="mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
+              {result.recommend === "roll" ? "✔ 지금은 가공 버튼을 누르는 편이 더 유리합니다." : "✔ 지금은 리롤 버튼을 누르는 편이 더 유리합니다."}
+            </div>
+          )
+        )}</div>
     </div>
   );
 }
