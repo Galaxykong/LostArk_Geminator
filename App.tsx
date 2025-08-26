@@ -1,4 +1,3 @@
-"use client";
 import React, { useMemo, useState } from "react";
 
 // ----------------------------------------------
@@ -808,7 +807,7 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
 
         {/* 실행 */}
         <div className="flex items-center gap-3 mt-6">
-          <button onClick={compute} className="px-5 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700">확률 계산하기</button>
+          <button type="button" onClick={compute} className="px-5 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700">확률 계산하기</button>
           <span className="text-gray-500 text-sm">(가속: 가중치 기대값 근사 적용)</span>
         </div>
 
