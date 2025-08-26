@@ -408,7 +408,13 @@ export default function App() {
 
   const [we, setWe] = useState<number>(1);
   const [pt, setPt] = useState<number>(1);
-  const [o1, setO1] = useState<number>(1);
+  
+  // 모바일 입력 개선: 현재 의지력/포인트 입력용 문자열 버퍼
+  const [weStr, setWeStr] = useState<string>(String(we));
+  const [ptStr, setPtStr] = useState<string>(String(pt));
+  React.useEffect(() => { setWeStr(String(we)); }, [we]);
+  React.useEffect(() => { setPtStr(String(pt)); }, [pt]);
+const [o1, setO1] = useState<number>(1);
   const [o2, setO2] = useState<number>(1);
   const [sw, setSw] = useState<boolean>(false);
   const [costAdj, setCostAdj] = useState<number>(0); // -100~+100
@@ -420,7 +426,15 @@ export default function App() {
   // 목표
   const [tWe, setTWe] = useState<number>(5);
   const [tPt, setTPt] = useState<number>(5);
-  const [includeOptions, setIncludeOptions] = useState<boolean>(false);
+  
+  // 모바일에서 숫자 지울 때 '1'로 강제되는 문제 방지용 입력 버퍼
+  const [tWeStr, setTWeStr] = useState<string>("5");
+  const [tPtStr, setTPtStr] = useState<string>("5");
+
+  // 모델 값이 바뀌면 문자열 버퍼도 동기화 (외부에서 값이 바뀌는 경우 대비)
+  React.useEffect(() => { setTWeStr(String(tWe)); }, [tWe]);
+  React.useEffect(() => { setTPtStr(String(tPt)); }, [tPt]);
+const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   const [goalPreset, setGoalPreset] = useState<GoalPreset>("없음");
 
   // 현재 화면 4개 (수동 변경 가능)
@@ -638,19 +652,83 @@ export default function App() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm text-gray-600">현재 의지력 효율</label>
-                <input type="number" min={1} max={5} className={inputCls} value={we} onChange={(e)=>setWe(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={weStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setWeStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setWeStr(v); setWe(n); }
+                    else { setWeStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(weStr || "1", 10);
+                    const c = clamp15(n);
+                    setWe(c);
+                    setWeStr(String(c));
+                  }}
+                />
               </div>
               <div>
                 <label className="text-sm text-gray-600">목표 의지력 효율</label>
-                <input type="number" min={1} max={5} className={inputCls} value={tWe} onChange={(e)=>setTWe(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={tWeStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setTWeStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setTWeStr(v); setTWe(n); }
+                    else { setTWeStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(tWeStr || "1", 10);
+                    const c = clamp15(n);
+                    setTWe(c);
+                    setTWeStr(String(c));
+                  }}
+                />
               </div>
               <div>
                 <label className="text-sm text-gray-600">현재 포인트</label>
-                <input type="number" min={1} max={5} className={inputCls} value={pt} onChange={(e)=>setPt(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={ptStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setPtStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setPtStr(v); setPt(n); }
+                    else { setPtStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(ptStr || "1", 10);
+                    const c = clamp15(n);
+                    setPt(c);
+                    setPtStr(String(c));
+                  }}
+                />
               </div>
               <div>
                 <label className="text-sm text-gray-600">목표 포인트</label>
-                <input type="number" min={1} max={5} className={inputCls} value={tPt} onChange={(e)=>setTPt(clamp15(parseInt(e.target.value||"1",10)))} />
+                <input type="number" min={1} max={5} className={inputCls}
+                  value={tPtStr}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    if (v === "") { setTPtStr(""); return; }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) { return; }
+                    if (n >= 1 && n <= 5) { setTPtStr(v); setTPt(n); }
+                    else { setTPtStr(v); }
+                  }}
+                  onBlur={()=>{
+                    const n = parseInt(tPtStr || "1", 10);
+                    const c = clamp15(n);
+                    setTPt(c);
+                    setTPtStr(String(c));
+                  }}
+                />
               </div>
             </div>
 
