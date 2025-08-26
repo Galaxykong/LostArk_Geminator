@@ -9,3 +9,9 @@
   bottom: 16px;
   z-index: 50;
 }
+
+/* Modal small animation (optional) */
+@keyframes pop {
+  from { transform: scale(0.98); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
