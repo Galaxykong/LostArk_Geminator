@@ -499,8 +499,7 @@ export default function App() {
     setResult({ pRollNow, pChangeNow, pFromScratch, recommend });
 
     // [NEW] 계산 직후 현재 4개 후보를 가중치로 생성해 아래 버튼으로 보여줌
-    regenCurrent4Weighted();
-    setComputed(true);
+      setComputed(true);
   }
 
   // 실제 진행: 현재 4개 중 하나 적용
@@ -746,7 +745,7 @@ export default function App() {
             <div className="mt-3 p-3 border rounded-xl">
               <label className="inline-flex items-center gap-2">
                 <input type="checkbox" className="w-4 h-4 accent-indigo-600" checked={includeOptions} onChange={(e)=>setIncludeOptions(e.target.checked)} />
-                <span className="text-sm font-semibold">목표 옵션(프리셋) 포함하기</span>
+                <span className="text-sm font-semibold">보조 효과 목표 포함하기</span>
               </label>
 
               {includeOptions && (
