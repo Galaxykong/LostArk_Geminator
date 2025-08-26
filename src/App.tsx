@@ -529,7 +529,7 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
     if (addToken > 0) setTokens((t) => t + addToken);
     if (!hasRolled) setHasRolled(true);
     regenCurrent4Weighted();
-    setTimeout(() => compute(), 0);
+    
   }
 
   // 리롤 버튼
@@ -538,7 +538,7 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
     if (!hasRolled) return; // 첫 가공 전 리롤 불가
     setTokens((t) => t - 1);
     regenCurrent4Weighted();
-    setTimeout(() => compute(), 0);
+    
   }
 
   // 이름 값 표시(효과 적용 기준)
@@ -831,22 +831,24 @@ const [includeOptions, setIncludeOptions] = useState<boolean>(false);
             </div>
           </div>
         )}
-
-     {result && (
-  <div className="mt-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
-    <div className="text-lg font-semibold">추천</div>
         {result && (
-          result.pRollNow < result.pFromScratch ? (
-            <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
-              ⚠ 현재 가공 성공 확률이 평균 기대값보다 낮습니다.<br/>
-              <b>가공을 중단하실 것을 추천합니다.</b>
-            </div>
-          ) : (
-            <div className="mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
-              {result.recommend === "roll" ? "✔ 지금은 가공 버튼을 누르는 편이 더 유리합니다." : "✔ 지금은 리롤 버튼을 누르는 편이 더 유리합니다."}
-            </div>
-          )
-        )}</div>
+          <div className="mt-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
+            <div className="text-lg font-semibold">추천</div>
+            {result.pRollNow < result.pFromScratch ? (
+              <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+                ⚠ 현재 가공 성공 확률이 평균 기대값보다 낮습니다.<br/>
+                <b>가공을 중단하실 것을 추천합니다.</b>
+              </div>
+            ) : (
+              <div className="mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
+                {result.recommend === "roll"
+                  ? "✔ 지금은 가공 버튼을 누르는 편이 더 유리합니다."
+                  : "✔ 지금은 리롤 버튼을 누르는 편이 더 유리합니다."}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

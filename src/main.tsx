@@ -14,9 +14,10 @@ function SupportModal({ open, onClose }: { open: boolean; onClose: () => void })
         </div>
         <div className="p-5 flex flex-col items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}qr.png`} alt="후원 QR" className="w-64 h-64 object-contain rounded-lg border"
-              onError={(e)=>{ (e.currentTarget as HTMLImageElement).alt="QR 이미지를 불러오지 못했습니다. public/qr.png 경로와 파일명을 확인하세요."; }}
+              onError={(e)=>{ (e.currentTarget as HTMLImageElement).alt="QR 이미지를 불러오지 못했습니다. "; }}
             />
-                 </div>
+
+        </div>
         <div className="px-5 pb-5 flex gap-2">
           <a
             href={`${import.meta.env.BASE_URL}qr.png`}
