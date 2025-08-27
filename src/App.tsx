@@ -390,14 +390,9 @@ export default function App() {
   const [idx2, setIdx2] = useState<number>(2);
   const [idx3, setIdx3] = useState<number>(3);
 
-  const currentIdx4 = useMemo(() => {
-    const arr = Array.from(new Set([idx0, idx1, idx2, idx3]));
-    while (arr.length < 4) {
-      const cands = E.map((_, i) => i).filter((i) => !arr.includes(i));
-      arr.push(cands[0]);
-    }
-    return arr.sort((a, b) => a - b);
-  }, [idx0, idx1, idx2, idx3]);
+// ✅ 사용자가 지정한 순서를 그대로 유지
+  const currentIdx4 = useMemo(() => [idx0, idx1, idx2, idx3], [idx0, idx1, idx2, idx3]);
+
 
   const [hasRolled, setHasRolled] = useState<boolean>(false);
   React.useEffect(() => {
@@ -449,11 +444,14 @@ export default function App() {
     setIdx3(picked[3] ?? 3);
   }
 
-  const resetAll = React.useCallback(() => {
+const resetAll = React.useCallback(() => {
   // 기본 설정
   setRarity("고급");
   setCostAdj(0);
-  // (rarity 바꾸면 useEffect가 attempts/tokens를 5/0으로 자동 세팅합니다)
+
+  // ✅ 등급과 무관하게 직접 초기화(가공 가능 횟수/리롤 토큰)
+  setAttempts(5);
+  setTokens(0);
 
   // 현재 능력치 & 목표
   setWe(1); setWeStr("1");
@@ -477,9 +475,10 @@ export default function App() {
   setComputed(false);
   setResult(null);
 
-  // 필요 시: 리셋 직후 후보 4개를 새로 뽑고 싶다면 다음 줄 주석 해제
+  // 필요 시 후보 4개 재생성
   regenCurrent4Weighted();
 }, []);
+
 
 
   function compute() {
