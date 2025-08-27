@@ -1,0 +1,25 @@
+{
+  "redirects": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap-1.xml",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!sitemap-1\\.xml|robots\\.txt|ads\\.txt).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sitemap-1.xml",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "Expires", "value": "0" }
+      ]
+    }
+  ]
+}
