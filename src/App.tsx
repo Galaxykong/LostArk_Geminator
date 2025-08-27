@@ -575,7 +575,7 @@ export default function App() {
   </span>
 </h1>
         <p className="text-sm md:text-base text-gray-600 mb-6">
-          실제 <b>등장 확률</b>과 <b>미등장 조건</b>을 반영한 가중치 모델로 4개 후보를 생성하고, 선택/리롤 전략까지 고려한 목표 달성 확률을 계산합니다.
+          실제 <b>등장 확률</b>과 <b>미등장 조건</b>을 반영하여 4개 후보를 생성하고, 선택/리롤 전략까지 고려한 목표 달성 확률을 계산합니다.
         </p>
 
         {/* 입력 카드들 */}
@@ -626,12 +626,6 @@ export default function App() {
                   onChange={(e) => setCostAdj(clampCost(parseInt(e.target.value || "0", 10)))}
                 />
               </div>
-              <div className="col-span-2">
-                <div className="text-xs text-gray-500 border rounded-xl px-3 py-2">
-                  첫 번째 효과= <b>옵션1</b>, 두 번째 효과= <b>옵션2</b> 로 간주합니다. "효과 변경"은 해당 효과의 <b>타입 변경</b>(수치는 유지)이며,
-                  이후의 +1/+2/+3/+4와 -1은 <b>바뀐 타입의 이름</b>을 따라 적용됩니다. 모든 능력치는 <b>1~5</b> 범위로 유지됩니다.
-                </div>
-              </div>
             </div>
 
             <div className="mt-4">
@@ -649,9 +643,6 @@ export default function App() {
                     {OPTION_TYPES.map((t)=>(<option key={t} value={t}>{t}</option>))}
                   </select>
                 </div>
-              </div>
-              <div className="mt-2 text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
-                현재 매핑: '옵션1'→ <b>{sw ? "슬롯2" : "슬롯1"}</b> ({sw ? slot2Type : slot1Type}) / '옵션2'→ <b>{sw ? "슬롯1" : "슬롯2"}</b> ({sw ? slot1Type : slot2Type})
               </div>
             </div>
           </div>
@@ -775,14 +766,7 @@ export default function App() {
                   )}
                 </div>
               )}
-
-              <div className="mt-3 text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
-                <div className="font-semibold mb-1">현재 이름-슬롯 매핑</div>
-                <div>
-                  '옵션1' → <b>{sw ? "슬롯2" : "슬롯1"}</b> (값: <b>{namedO1}</b>, 타입: <b>{sw ? slot2Type : slot1Type}</b>) &nbsp; / &nbsp;
-                  '옵션2' → <b>{sw ? "슬롯1" : "슬롯2"}</b> (값: <b>{namedO2}</b>, 타입: <b>{sw ? slot1Type : slot2Type}</b>) &nbsp; | &nbsp; 비용보정: <b>{costAdj}%</b>
-                </div>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -820,7 +804,6 @@ export default function App() {
           <button onClick={compute} className="px-5 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700">
             확률 계산하기
           </button>
-          <span className="text-gray-500 text-sm">(가속: 가중치 기대값 근사 적용)</span>
         </div>
 
         {/* 결과 카드들 */}
