@@ -689,6 +689,9 @@ export default function App() {
         <p className="text-sm md:text-base text-gray-600 mb-6">
           기대비용 기준으로 가공/중단을 추천합니다. 로스트아크 공식 옵션 등장 확률을 반영하여 계산하였습니다.
         </p>
+         <p className="text-sm md:text-base text-red-600 mb-6">
+          경우의 수가 많아질 수록 계산에 약간 시간이 걸리는 점 양해바랍니다!
+         </p>
 
         {/* 입력 카드들 */}
         <div className="grid lg:grid-cols-2 gap-6">
