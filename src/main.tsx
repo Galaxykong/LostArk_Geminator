@@ -79,9 +79,9 @@ function ManualModal({ open, onClose }: { open: boolean; onClose: () => void }) 
               </li>
               <li>
                 아래 <span className="font-extrabold text-red-600">확률 계산하기</span>를 누르면{' '}
-                <span className="font-bold text-red-600">가공 성공 확률</span>이 표시되고,{' '}
-                <span className="font-bold text-red-600">현재 상태에서의 평균 기댓값</span>과 비교해
-                <span className="font-bold"> 가공/리롤 추천</span>을 제공합니다.
+                <span className="font-bold text-red-600">기대비용</span>이 표시되고,{' '}
+                <span className="font-bold text-red-600">새 젬 가공시의 기댓값</span>과 비교해
+                <span className="font-bold"> 가공/중단을 추천</span>합니다.
               </li>
               <li>
                 가공 후, <span className="font-semibold">4) 시뮬레이션 진행</span> 영역에서{' '}
@@ -107,8 +107,7 @@ function ManualModal({ open, onClose }: { open: boolean; onClose: () => void }) 
                 <span className="font-bold">본인 판단하에 진행하는 것</span>을 권장합니다.
               </li>
               <li>
-                이미 <span className="font-semibold">가공이 망한 상태</span>라면, 가공 추천은 의미가
-                없을 수 있습니다. 하지만 <span className="text-red-600 font-semibold">도박은 본인 선택</span>
+                젬을 사서 진행하시는 경우는 <span className="font-semibold">새 젬 가공 기댓값 + 젬 가격을 더한 것</span>과 비교하시면 됩니다.
               </li>
             </ul>
           </section>

@@ -1,11 +1,11 @@
+
 import React, { useMemo, useState } from "react";
 
 /* -------------------------------------------------
-   Gem 가공 확률 계산기 — App.tsx (유물/고대 합산 확률 기능 추가)
-   - 2) 현재 능력치에 '현재 첫 번째/두 번째 효과 수치' 입력칸(1~5) 추가
-   - '확률 계산하기' 시 합산 점수(we+pt+name1+name2) ≥16/≥19 확률 계산
-   - 현재 보이는 4개(pRollNow) vs 전체 평균(pFromScratch) 비교해
-     합산 점수 기준 추천(초록/빨강) 배지 표시
+   Gem 가공 확률 계산기 — App.tsx (기대비용 비교 중심 UI)
+   - 현재/새 젬 기대비용 비교로 가공·리롤·중단 권고
+   - 합산 점수(≥16/≥19)도 비용 기준 비교 추가
+   - 시뮬레이션 섹션 유지
 --------------------------------------------------*/
 
 // ================ 모델 타입 ================
@@ -36,31 +36,26 @@ interface Effect {
 }
 
 const E: Effect[] = [
-  // 의지력 효율
   { id: "WE+1", label: "의지력 효율 +1", kind: "WE_PLUS", plusTier: 1, baseProb: 11.65 },
   { id: "WE+2", label: "의지력 효율 +2", kind: "WE_PLUS", plusTier: 2, baseProb: 4.4 },
   { id: "WE+3", label: "의지력 효율 +3", kind: "WE_PLUS", plusTier: 3, baseProb: 1.75 },
   { id: "WE+4", label: "의지력 효율 +4", kind: "WE_PLUS", plusTier: 4, baseProb: 0.45 },
   { id: "WE-1", label: "의지력 효율 -1", kind: "WE_MINUS1", delta: -1, baseProb: 3.0 },
-  // 포인트
   { id: "PT+1", label: "포인트 +1", kind: "PT_PLUS", plusTier: 1, baseProb: 11.65 },
   { id: "PT+2", label: "포인트 +2", kind: "PT_PLUS", plusTier: 2, baseProb: 4.4 },
   { id: "PT+3", label: "포인트 +3", kind: "PT_PLUS", plusTier: 3, baseProb: 1.75 },
   { id: "PT+4", label: "포인트 +4", kind: "PT_PLUS", plusTier: 4, baseProb: 0.45 },
   { id: "PT-1", label: "포인트 -1", kind: "PT_MINUS1", delta: -1, baseProb: 3.0 },
-  // 첫번째 효과(이름 기준)
   { id: "O1+1", label: "첫번째 효과 Lv. +1", kind: "O1_PLUS", plusTier: 1, baseProb: 11.65 },
   { id: "O1+2", label: "첫번째 효과 Lv. +2", kind: "O1_PLUS", plusTier: 2, baseProb: 4.4 },
   { id: "O1+3", label: "첫번째 효과 Lv. +3", kind: "O1_PLUS", plusTier: 3, baseProb: 1.75 },
   { id: "O1+4", label: "첫번째 효과 Lv. +4", kind: "O1_PLUS", plusTier: 4, baseProb: 0.45 },
   { id: "O1-1", label: "첫번째 효과 Lv. -1", kind: "O1_MINUS1", delta: -1, baseProb: 3.0 },
-  // 두번째 효과(이름 기준)
   { id: "O2+1", label: "두번째 효과 Lv. +1", kind: "O2_PLUS", plusTier: 1, baseProb: 11.65 },
   { id: "O2+2", label: "두번째 효과 Lv. +2", kind: "O2_PLUS", plusTier: 2, baseProb: 4.4 },
   { id: "O2+3", label: "두번째 효과 Lv. +3", kind: "O2_PLUS", plusTier: 3, baseProb: 1.75 },
   { id: "O2+4", label: "두번째 효과 Lv. +4", kind: "O2_PLUS", plusTier: 4, baseProb: 0.45 },
   { id: "O2-1", label: "두번째 효과 Lv. -1", kind: "O2_MINUS1", delta: -1, baseProb: 3.0 },
-  // 변경/비용/상태/리롤
   { id: "O1chg", label: "첫번째 효과 변경", kind: "O1_CHANGE", baseProb: 3.25 },
   { id: "O2chg", label: "두번째 효과 변경", kind: "O2_CHANGE", baseProb: 3.25 },
   { id: "COST+100", label: "가공 비용 +100% 증가", kind: "COST_UP", baseProb: 1.75 },
@@ -98,7 +93,7 @@ function currentNameValues(s: State) {
   return { v1: s.sw ? s.o2 : s.o1, v2: s.sw ? s.o1 : s.o2 };
 }
 
-// 타입 기준 값(목표판정용)
+// 타입 기준 값
 function valueByTypeDyn(s: State, t: OptionType): number | null {
   if (t === s.t1Type) return s.o1;
   if (t === s.t2Type) return s.o2;
@@ -206,7 +201,6 @@ function weightedMeanF(s: State, attemptsLeft: number, fAll: number[]): number {
   for (let i = 0; i < ws.length; i++) acc += ws[i] * fAll[i];
   return acc / total;
 }
-
 
 // 효과 적용
 function applyEffect(s: State, eff: Effect, changeTo?: OptionType): { next: State; addToken: number } {
@@ -324,7 +318,6 @@ function buildEngineWithPredicate(successPred: (s: State) => boolean) {
   return { P_pre, P_roll_now };
 }
 
-// 기존 ‘목표 달성’ 엔진
 function buildProbabilityEngine(targets: Targets) {
   return buildEngineWithPredicate((s) => isSuccessByTargets(s, targets));
 }
@@ -340,6 +333,7 @@ function labelForEffect(e: Effect, slot1Type: OptionType, slot2Type: OptionType)
   }
 }
 const fmtPct = (x: number) => `${(x * 100).toFixed(2)}%`;
+const fmtGold = (x: number) => (Number.isFinite(x) ? `${Math.round(x).toLocaleString()} 골드` : "∞");
 
 // ================ 컴포넌트 ================
 export default function App() {
@@ -360,7 +354,6 @@ export default function App() {
   React.useEffect(() => { setWeStr(String(we)); }, [we]);
   React.useEffect(() => { setPtStr(String(pt)); }, [pt]);
 
-  // [NEW] 현재 첫/두 번째 효과 수치 입력 (o1/o2)
   const [o1, setO1] = useState<number>(1);
   const [o2, setO2] = useState<number>(1);
   const [o1Str, setO1Str] = useState<string>(String(o1));
@@ -384,15 +377,11 @@ export default function App() {
   const [includeOptions, setIncludeOptions] = useState<boolean>(false);
   const [goalPreset, setGoalPreset] = useState<GoalPreset>("없음");
 
-  // 현재 화면 4개
   const [idx0, setIdx0] = useState<number>(0);
   const [idx1, setIdx1] = useState<number>(1);
   const [idx2, setIdx2] = useState<number>(2);
   const [idx3, setIdx3] = useState<number>(3);
-
-// ✅ 사용자가 지정한 순서를 그대로 유지
   const currentIdx4 = useMemo(() => [idx0, idx1, idx2, idx3], [idx0, idx1, idx2, idx3]);
-
 
   const [hasRolled, setHasRolled] = useState<boolean>(false);
   React.useEffect(() => {
@@ -415,25 +404,21 @@ export default function App() {
     return t;
   }, [tWe, tPt, includeOptions, goalPreset]);
 
-  // 엔진: 목표 달성 / 합산 점수(16/19)
   const engine = useMemo(() => buildProbabilityEngine(targets), [targets]);
   const sum16Engine = useMemo(() => buildEngineWithPredicate((s) => isSumAtLeast(s, 16)), []);
   const sum19Engine = useMemo(() => buildEngineWithPredicate((s) => isSumAtLeast(s, 19)), []);
 
-  // 결과
   const [computed, setComputed] = useState<boolean>(false);
   const [result, setResult] = useState<null | {
-    pRollNow: number; pChangeNow: number; pFromScratch: number; recommend: "roll" | "change";
-    p16_rollNow: number; p16_fromScratch: number;
-    p19_rollNow: number; p19_fromScratch: number;
+    pRollNow: number; pChangeNow: number; pFromScratch: number; recommend: "roll" | "change"; pOptimalNow: number;
+    p16_rollNow: number; p16_fromScratch: number; p16_changeNow: number;
+    p19_rollNow: number; p19_fromScratch: number; p19_changeNow: number;
+    pNewGem: number; pNew16: number; pNew19: number;
+    ecCurrent: number; ecNew: number;
+    ecCurrent16: number; ecNew16: number;
+    ecCurrent19: number; ecNew19: number;
+    costAdvice: "roll" | "reroll" | "stop";
   }>(null);
-
-  const rollVsAllClass = useMemo(() => {
-    if (!result) return "text-gray-900";
-    if (result.pRollNow > result.pFromScratch) return "text-blue-600";
-    if (result.pRollNow < result.pFromScratch) return "text-rose-600";
-    return "text-gray-900";
-  }, [result]);
 
   function regenCurrent4Weighted() {
     const s: State = { we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type };
@@ -444,64 +429,85 @@ export default function App() {
     setIdx3(picked[3] ?? 3);
   }
 
-const resetAll = React.useCallback(() => {
-  // 기본 설정
-  setRarity("고급");
-  setCostAdj(0);
-
-  // ✅ 등급과 무관하게 직접 초기화(가공 가능 횟수/리롤 토큰)
-  setAttempts(5);
-  setTokens(0);
-
-  // 현재 능력치 & 목표
-  setWe(1); setWeStr("1");
-  setPt(1); setPtStr("1");
-  setO1(1); setO1Str("1");
-  setO2(1); setO2Str("1");
-  setSw(false);
-
-  setSlot1Type("공격형 A");
-  setSlot2Type("공격형 B");
-
-  setTWe(5); setTWeStr("5");
-  setTPt(5); setTPtStr("5");
-
-  setIncludeOptions(false);
-  setGoalPreset("없음");
-
-  // 화면/결과
-  setIdx0(0); setIdx1(1); setIdx2(2); setIdx3(3);
-  setHasRolled(false);
-  setComputed(false);
-  setResult(null);
-
-  // 필요 시 후보 4개 재생성
-  regenCurrent4Weighted();
-}, []);
-
-
+  const resetAll = React.useCallback(() => {
+    setRarity("고급");
+    setCostAdj(0);
+    setAttempts(5);
+    setTokens(0);
+    setWe(1); setWeStr("1");
+    setPt(1); setPtStr("1");
+    setO1(1); setO1Str("1");
+    setO2(1); setO2Str("1");
+    setSw(false);
+    setSlot1Type("공격형 A");
+    setSlot2Type("공격형 B");
+    setTWe(5); setTWeStr("5");
+    setTPt(5); setTPtStr("5");
+    setIncludeOptions(false);
+    setGoalPreset("없음");
+    setIdx0(0); setIdx1(1); setIdx2(2); setIdx3(3);
+    setHasRolled(false);
+    setComputed(false);
+    setResult(null);
+    regenCurrent4Weighted();
+  }, []);
 
   function compute() {
     const s: State = { we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type };
     const lock = !hasRolled;
 
-    // 목표 달성 관점
     const pRollNow = engine.P_roll_now(s, attempts, tokens, currentIdx4);
     const pChangeNow = tokens > 0 && !lock ? engine.P_pre(s, attempts, tokens - 1, false) : 0;
     const pFromScratch = engine.P_pre(s, attempts, tokens, lock);
+    const pOptimalNow = Math.max(pRollNow, pChangeNow);
 
-    // [NEW] 합산 점수 관점(유물/고대)
     const p16_rollNow = sum16Engine.P_roll_now(s, attempts, tokens, currentIdx4);
+    const p16_changeNow = tokens > 0 && !lock ? sum16Engine.P_pre(s, attempts, tokens - 1, false) : 0;
     const p16_fromScratch = sum16Engine.P_pre(s, attempts, tokens, lock);
+
     const p19_rollNow = sum19Engine.P_roll_now(s, attempts, tokens, currentIdx4);
+    const p19_changeNow = tokens > 0 && !lock ? sum19Engine.P_pre(s, attempts, tokens - 1, false) : 0;
     const p19_fromScratch = sum19Engine.P_pre(s, attempts, tokens, lock);
 
+    const GOLD_PER_ATTEMPT_BASE = 900;
+    const currentCostPerAttempt = GOLD_PER_ATTEMPT_BASE * (1 + costAdj / 100);
+    const ecCurrent = pOptimalNow > 0 ? (1 / pOptimalNow) * currentCostPerAttempt * attempts : Number.POSITIVE_INFINITY;
+
+    const baseAttempts = (rarity === "고급" ? 5 : rarity === "희귀" ? 7 : 9);
+    const baseTokens = (rarity === "고급" ? 0 : rarity === "희귀" ? 1 : 2);
+    const sNew: State = { we: 1, pt: 1, o1: 1, o2: 1, sw: false, costAdj: 0, t1Type: "공격형 A", t2Type: "공격형 B" };
+    const pNewGem = engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const ecNew = pNewGem > 0 ? (1 / pNewGem) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+
+    const p16_opt = Math.max(p16_rollNow, p16_changeNow);
+    const p19_opt = Math.max(p19_rollNow, p19_changeNow);
+    const ecCurrent16 = p16_opt > 0 ? (1 / p16_opt) * currentCostPerAttempt * attempts : Number.POSITIVE_INFINITY;
+    const ecCurrent19 = p19_opt > 0 ? (1 / p19_opt) * currentCostPerAttempt * attempts : Number.POSITIVE_INFINITY;
+
+    const pNew16 = sum16Engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const pNew19 = sum19Engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const ecNew16 = pNew16 > 0 ? (1 / pNew16) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+    const ecNew19 = pNew19 > 0 ? (1 / pNew19) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+
+    let costAdvice: "roll" | "reroll" | "stop";
+    if (!(ecCurrent < ecNew)) costAdvice = "stop";
+    else if (pChangeNow > pRollNow && tokens > 0 && !lock) costAdvice = "reroll";
+    else costAdvice = "roll";
+
     const recommend = (!lock && tokens > 0 && pChangeNow > pRollNow) ? "change" : "roll";
-    setResult({ pRollNow, pChangeNow, pFromScratch, recommend, p16_rollNow, p16_fromScratch, p19_rollNow, p19_fromScratch });
+    setResult({
+      pRollNow, pChangeNow, pFromScratch, recommend, pOptimalNow,
+      p16_rollNow, p16_fromScratch, p16_changeNow,
+      p19_rollNow, p19_fromScratch, p19_changeNow,
+      pNewGem, pNew16, pNew19,
+      ecCurrent, ecNew,
+      ecCurrent16, ecNew16,
+      ecCurrent19, ecNew19,
+      costAdvice,
+    });
     setComputed(true);
   }
 
-  // 실제 적용
   function applyEffectByIndex(idx: number) {
     if (attempts <= 0) return;
     const s: State = { we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type };
@@ -513,20 +519,58 @@ const resetAll = React.useCallback(() => {
     if (!hasRolled) setHasRolled(true);
     regenCurrent4Weighted();
 
-    // 즉시 재계산
-    const lock = false;
     const s2: State = { ...next };
-    const pRollNow = engine.P_roll_now(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), currentIdx4);
-    const pChangeNow = (tokens + (addToken || 0)) > 0 ? engine.P_pre(s2, Math.max(0, attempts - 1), (tokens + (addToken || 0)) - 1, false) : 0;
-    const pFromScratch = engine.P_pre(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), false);
+    const newAttempts = Math.max(0, attempts - 1);
+    const newTokens = tokens + (addToken || 0);
+    const pRollNow = engine.P_roll_now(s2, newAttempts, newTokens, currentIdx4);
+    const pChangeNow = newTokens > 0 ? engine.P_pre(s2, newAttempts, newTokens - 1, false) : 0;
+    const pFromScratch = engine.P_pre(s2, newAttempts, newTokens, false);
+    const pOptimalNow = Math.max(pRollNow, pChangeNow);
 
-    const p16_rollNow = sum16Engine.P_roll_now(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), currentIdx4);
-    const p16_fromScratch = sum16Engine.P_pre(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), false);
-    const p19_rollNow = sum19Engine.P_roll_now(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), currentIdx4);
-    const p19_fromScratch = sum19Engine.P_pre(s2, Math.max(0, attempts - 1), tokens + (addToken || 0), false);
+    const p16_rollNow = sum16Engine.P_roll_now(s2, newAttempts, newTokens, currentIdx4);
+    const p16_changeNow = newTokens > 0 ? sum16Engine.P_pre(s2, newAttempts, newTokens - 1, false) : 0;
+    const p16_fromScratch = sum16Engine.P_pre(s2, newAttempts, newTokens, false);
 
-    const recommend = ((tokens + (addToken || 0)) > 0 && pChangeNow > pRollNow) ? "change" : "roll";
-    setResult({ pRollNow, pChangeNow, pFromScratch, recommend, p16_rollNow, p16_fromScratch, p19_rollNow, p19_fromScratch });
+    const p19_rollNow = sum19Engine.P_roll_now(s2, newAttempts, newTokens, currentIdx4);
+    const p19_changeNow = newTokens > 0 ? sum19Engine.P_pre(s2, newAttempts, newTokens - 1, false) : 0;
+    const p19_fromScratch = sum19Engine.P_pre(s2, newAttempts, newTokens, false);
+
+    const GOLD_PER_ATTEMPT_BASE = 900;
+    const currentCostPerAttempt = GOLD_PER_ATTEMPT_BASE * (1 + next.costAdj / 100);
+    const ecCurrent = pOptimalNow > 0 ? (1 / pOptimalNow) * currentCostPerAttempt * newAttempts : Number.POSITIVE_INFINITY;
+
+    const baseAttempts = (rarity === "고급" ? 5 : rarity === "희귀" ? 7 : 9);
+    const baseTokens = (rarity === "고급" ? 0 : rarity === "희귀" ? 1 : 2);
+    const sNew: State = { we: 1, pt: 1, o1: 1, o2: 1, sw: false, costAdj: 0, t1Type: "공격형 A", t2Type: "공격형 B" };
+    const pNewGem = engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const ecNew = pNewGem > 0 ? (1 / pNewGem) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+
+    const p16_opt = Math.max(p16_rollNow, p16_changeNow);
+    const p19_opt = Math.max(p19_rollNow, p19_changeNow);
+    const ecCurrent16 = p16_opt > 0 ? (1 / p16_opt) * currentCostPerAttempt * newAttempts : Number.POSITIVE_INFINITY;
+    const ecCurrent19 = p19_opt > 0 ? (1 / p19_opt) * currentCostPerAttempt * newAttempts : Number.POSITIVE_INFINITY;
+
+    const pNew16 = sum16Engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const pNew19 = sum19Engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const ecNew16 = pNew16 > 0 ? (1 / pNew16) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+    const ecNew19 = pNew19 > 0 ? (1 / pNew19) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+
+    let costAdvice: "roll" | "reroll" | "stop";
+    if (!(ecCurrent < ecNew)) costAdvice = "stop";
+    else if (pChangeNow > pRollNow && newTokens > 0) costAdvice = "reroll";
+    else costAdvice = "roll";
+
+    const recommend = (newTokens > 0 && pChangeNow > pRollNow) ? "change" : "roll";
+    setResult({
+      pRollNow, pChangeNow, pFromScratch, recommend, pOptimalNow,
+      p16_rollNow, p16_fromScratch, p16_changeNow,
+      p19_rollNow, p19_fromScratch, p19_changeNow,
+      pNewGem, pNew16, pNew19,
+      ecCurrent, ecNew,
+      ecCurrent16, ecNew16,
+      ecCurrent19, ecNew19,
+      costAdvice,
+    });
   }
 
   function rerollSet() {
@@ -536,17 +580,57 @@ const resetAll = React.useCallback(() => {
     regenCurrent4Weighted();
 
     const s: State = { we, pt, o1, o2, sw, costAdj, t1Type: slot1Type, t2Type: slot2Type };
-    const pRollNow = engine.P_roll_now(s, attempts, Math.max(0, tokens - 1), currentIdx4);
-    const pChangeNow = Math.max(0, tokens - 1) > 0 ? engine.P_pre(s, attempts, Math.max(0, tokens - 1) - 1, false) : 0;
-    const pFromScratch = engine.P_pre(s, attempts, Math.max(0, tokens - 1), false);
+    const newTokens = Math.max(0, tokens - 1);
 
-    const p16_rollNow = sum16Engine.P_roll_now(s, attempts, Math.max(0, tokens - 1), currentIdx4);
-    const p16_fromScratch = sum16Engine.P_pre(s, attempts, Math.max(0, tokens - 1), false);
-    const p19_rollNow = sum19Engine.P_roll_now(s, attempts, Math.max(0, tokens - 1), currentIdx4);
-    const p19_fromScratch = sum19Engine.P_pre(s, attempts, Math.max(0, tokens - 1), false);
+    const pRollNow = engine.P_roll_now(s, attempts, newTokens, currentIdx4);
+    const pChangeNow = newTokens > 0 ? engine.P_pre(s, attempts, newTokens - 1, false) : 0;
+    const pFromScratch = engine.P_pre(s, attempts, newTokens, false);
+    const pOptimalNow = Math.max(pRollNow, pChangeNow);
 
-    const recommend = (Math.max(0, tokens - 1) > 0 && pChangeNow > pRollNow) ? "change" : "roll";
-    setResult({ pRollNow, pChangeNow, pFromScratch, recommend, p16_rollNow, p16_fromScratch, p19_rollNow, p19_fromScratch });
+    const p16_rollNow = sum16Engine.P_roll_now(s, attempts, newTokens, currentIdx4);
+    const p16_changeNow = newTokens > 0 ? sum16Engine.P_pre(s, attempts, newTokens - 1, false) : 0;
+    const p16_fromScratch = sum16Engine.P_pre(s, attempts, newTokens, false);
+
+    const p19_rollNow = sum19Engine.P_roll_now(s, attempts, newTokens, currentIdx4);
+    const p19_changeNow = newTokens > 0 ? sum19Engine.P_pre(s, attempts, newTokens - 1, false) : 0;
+    const p19_fromScratch = sum19Engine.P_pre(s, attempts, newTokens, false);
+
+    const GOLD_PER_ATTEMPT_BASE = 900;
+    const currentCostPerAttempt = GOLD_PER_ATTEMPT_BASE * (1 + costAdj / 100);
+    const ecCurrent = pOptimalNow > 0 ? (1 / pOptimalNow) * currentCostPerAttempt * attempts : Number.POSITIVE_INFINITY;
+
+    const baseAttempts = (rarity === "고급" ? 5 : rarity === "희귀" ? 7 : 9);
+    const baseTokens = (rarity === "고급" ? 0 : rarity === "희귀" ? 1 : 2);
+    const sNew: State = { we: 1, pt: 1, o1: 1, o2: 1, sw: false, costAdj: 0, t1Type: "공격형 A", t2Type: "공격형 B" };
+    const pNewGem = engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const ecNew = pNewGem > 0 ? (1 / pNewGem) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+
+    const p16_opt = Math.max(p16_rollNow, p16_changeNow);
+    const p19_opt = Math.max(p19_rollNow, p19_changeNow);
+    const ecCurrent16 = p16_opt > 0 ? (1 / p16_opt) * currentCostPerAttempt * attempts : Number.POSITIVE_INFINITY;
+    const ecCurrent19 = p19_opt > 0 ? (1 / p19_opt) * currentCostPerAttempt * attempts : Number.POSITIVE_INFINITY;
+
+    const pNew16 = sum16Engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const pNew19 = sum19Engine.P_pre(sNew, baseAttempts, baseTokens, true);
+    const ecNew16 = pNew16 > 0 ? (1 / pNew16) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+    const ecNew19 = pNew19 > 0 ? (1 / pNew19) * GOLD_PER_ATTEMPT_BASE * baseAttempts : Number.POSITIVE_INFINITY;
+
+    let costAdvice: "roll" | "reroll" | "stop";
+    if (!(ecCurrent < ecNew)) costAdvice = "stop";
+    else if (pChangeNow > pRollNow && newTokens > 0) costAdvice = "reroll";
+    else costAdvice = "roll";
+
+    const recommend = (newTokens > 0 && pChangeNow > pRollNow) ? "change" : "roll";
+    setResult({
+      pRollNow, pChangeNow, pFromScratch, recommend, pOptimalNow,
+      p16_rollNow, p16_fromScratch, p16_changeNow,
+      p19_rollNow, p19_fromScratch, p19_changeNow,
+      pNewGem, pNew16, pNew19,
+      ecCurrent, ecNew,
+      ecCurrent16, ecNew16,
+      ecCurrent19, ecNew19,
+      costAdvice,
+    });
   }
 
   const namedO1 = sw ? o2 : o1;
@@ -575,7 +659,7 @@ const resetAll = React.useCallback(() => {
           <span className="ml-2 text-base md:text-lg text-gray-400 font-normal">Made by 갤럭시카드 @아브렐슈드</span>
         </h1>
         <p className="text-sm md:text-base text-gray-600 mb-6">
-          실제 <b>등장 확률</b>과 <b>미등장 조건</b>을 반영하여 4개 후보를 생성하고, 선택/리롤 전략까지 고려한 목표 달성 확률을 계산합니다.
+          기대비용 기준으로 가공/중단을 추천합니다. 로스트아크 공식 옵션 등장 확률을 반영하여 계산하였습니다.
         </p>
 
         {/* 입력 카드들 */}
@@ -630,7 +714,6 @@ const resetAll = React.useCallback(() => {
           <div className="bg-white rounded-2xl shadow p-5 space-y-4">
             <h2 className="text-lg font-semibold">2) 현재 능력치 & 목표</h2>
             <div className="grid grid-cols-2 gap-3">
-              {/* 현재 의지력 */}
               <div>
                 <label className="text-sm text-gray-600">현재 의지력 효율</label>
                 <input type="number" min={1} max={5} className={inputCls}
@@ -639,7 +722,6 @@ const resetAll = React.useCallback(() => {
                     const n=parseInt(v,10); if(Number.isNaN(n))return; if(n>=1&&n<=5){setWeStr(v);setWe(n);} else setWeStr(v);}}
                   onBlur={()=>{ const n=parseInt(weStr||"1",10); const c=clamp15(n); setWe(c); setWeStr(String(c));}}/>
               </div>
-              {/* 목표 의지력 */}
               <div>
                 <label className="text-sm text-gray-600">목표 의지력 효율</label>
                 <input type="number" min={1} max={5} className={inputCls}
@@ -648,8 +730,6 @@ const resetAll = React.useCallback(() => {
                     const n=parseInt(v,10); if(Number.isNaN(n))return; if(n>=1&&n<=5){setTWeStr(v);setTWe(n);} else setTWeStr(v);}}
                   onBlur={()=>{ const n=parseInt(tWeStr||"1",10); const c=clamp15(n); setTWe(c); setTWeStr(String(c));}}/>
               </div>
-
-              {/* 현재 포인트 */}
               <div>
                 <label className="text-sm text-gray-600">현재 포인트</label>
                 <input type="number" min={1} max={5} className={inputCls}
@@ -658,7 +738,6 @@ const resetAll = React.useCallback(() => {
                     const n=parseInt(v,10); if(Number.isNaN(n))return; if(n>=1&&n<=5){setPtStr(v);setPt(n);} else setPtStr(v);}}
                   onBlur={()=>{ const n=parseInt(ptStr||"1",10); const c=clamp15(n); setPt(c); setPtStr(String(c));}}/>
               </div>
-              {/* 목표 포인트 */}
               <div>
                 <label className="text-sm text-gray-600">목표 포인트</label>
                 <input type="number" min={1} max={5} className={inputCls}
@@ -667,8 +746,6 @@ const resetAll = React.useCallback(() => {
                     const n=parseInt(v,10); if(Number.isNaN(n))return; if(n>=1&&n<=5){setTPtStr(v);setTPt(n);} else setTPtStr(v);}}
                   onBlur={()=>{ const n=parseInt(tPtStr||"1",10); const c=clamp15(n); setTPt(c); setTPtStr(String(c));}}/>
               </div>
-
-              {/* [NEW] 현재 첫/두 번째 효과 수치 */}
               <div>
                 <label className="text-sm text-gray-600">현재 첫 번째 효과 수치</label>
                 <input type="number" min={1} max={5} className={inputCls}
@@ -744,63 +821,89 @@ const resetAll = React.useCallback(() => {
           </div>
         </div>
 
-      {/* 실행 */}
-<div className="relative mt-6">
-  {/* 가운데 정렬된 메인 버튼 */}
-  <div className="flex justify-center">
-    <button
-      onClick={compute}
-      className="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700"
-    >
-      확률 계산하기
-    </button>
-  </div>
+        {/* 실행 버튼 + 리셋 */}
+        <div className="relative mt-6">
+          <div className="flex justify-center">
+            <button
+              onClick={compute}
+              className="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700"
+            >
+              확률 계산하기
+            </button>
+          </div>
+          <button
+            onClick={resetAll}
+            className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-2 text-xs rounded-xl bg-rose-600 text-white shadow hover:bg-rose-700"
+            title="기본 설정과 현재 능력치 & 목표를 초기 상태로 되돌립니다."
+          >
+            리셋
+          </button>
+        </div>
 
-  {/* 우측 상단 작고 붉은 리셋 버튼 */}
-  <button
-    onClick={resetAll}
-    className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-2 text-xs rounded-xl bg-rose-600 text-white shadow hover:bg-rose-700"
-    title="기본 설정과 현재 능력치 & 목표를 초기 상태로 되돌립니다."
-  >
-    리셋
-  </button>
-</div>
-
-
-        {/* 결과 카드들 (목표 달성) */}
+        {/* ✅ 기대비용 비교 — 최상단 노출 */}
         {result && (
-          <div className="grid md:grid-cols-3 gap-6 mt-6">
-            <div className="bg-white rounded-2xl shadow p-5">
-              <div className="text-sm text-gray-500">지금 가공 버튼을 누르면</div>
-              <div className={`text-3xl font-bold mt-1 ${rollVsAllClass}`}>{fmtPct(result.pRollNow)}</div>
-              <div className="text-xs text-gray-500 mt-1">(현재 보이는 4가지 중 1개 무작위 적용 → 이후 최적 진행)</div>
+          <div className="bg-white rounded-2xl shadow p-5 mt-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">기대 비용 비교 (1회당 900골드 기준)</h3>
+              <span className={`text-xs px-2 py-1 rounded-full border ${
+                result.costAdvice === "stop"
+                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              }`}>
+                {result.costAdvice === "stop" ? "중단 권유" : (result.costAdvice === "reroll" ? "리롤 추천" : "가공 진행 추천")}
+              </span>
             </div>
-            <div className="bg-white rounded-2xl shadow p-5">
-              <div className="text-sm text-gray-500">지금 가공 효과 변경(리롤)하면</div>
-              <div className="text-3xl font-bold mt-1">{hasRolled ? fmtPct(result.pChangeNow) : "사용 불가"}</div>
-              <div className="text-xs text-gray-500 mt-1">{hasRolled ? "(토큰 1개 사용 후 새 후보 4개 → 이후 최적 진행)" : "첫 가공 전에는 리롤을 사용할 수 없습니다."}</div>
+
+            <div className="mt-3 grid md:grid-cols-3 gap-6">
+              <div className="p-4 border rounded-xl">
+                <div className="text-sm text-gray-500">현재 젬 진행 (가공/리롤 최적화)</div>
+                <div className="text-xl font-bold mt-1">{fmtGold(result.ecCurrent)}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  남은 가공 횟수 × 1회 비용 × (1 / p<sub>최적</sub>)
+                </div>
+                <div className="text-xs text-gray-500 font-bold mt-1">
+                  현재 확률 {fmtPct(result.pOptimalNow)}
+                </div>
+              </div>
+              <div className="p-4 border rounded-xl">
+                <div className="text-sm text-gray-500">새 젬 시작 (등급 평균)</div>
+                <div className="text-xl font-bold mt-1">{fmtGold(result.ecNew)}</div>
+                <div className="text-xs text-gray-500 mt-1">전체 가공 횟수 × 1회 비용 × (1 / p<sub>new</sub>)</div>
+                <div className="text-xs text-gray-500 font-bold">새 젬 성공 확률 {fmtPct(result.pNewGem)}</div>
+              </div>
             </div>
-            <div className="bg-white rounded-2xl shadow p-5">
-              <div className="text-sm text-gray-500">현재 상태에서의 전체 성공확률</div>
-              <div className="text-3xl font-bold mt-1">{fmtPct(result.pFromScratch)}</div>
-              <div className="text-xs text-gray-500 mt-1">(보이지 않는 상태에서 4개 생성되는 순간부터 최적 진행)</div>
+
+            <div className="mt-4 text-sm">
+              {result.costAdvice === "stop" ? (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
+                  현재 젬의 기대비용이 새 젬보다 <b>비쌉니다</b>. <b>가공을 중단</b>하고 새 젬을 시작하는 편이 유리합니다.
+                </div>
+              ) : result.costAdvice === "reroll" ? (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                  현재 젬의 기대비용이 새 젬보다 <b>저렴</b>합니다. 다만 <b>리롤</b>이 가공보다 더 유리합니다. (토큰 사용 권장)
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
+                  현재 젬의 기대비용이 새 젬보다 <b>저렴</b>합니다. <b>가공 진행</b>을 추천합니다.
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* [NEW] 합산 점수(유물/고대) 카드 */}
+        {/* 합산 점수 달성확률 — 비용 표시로 개편 */}
         {result && (
           <div className="bg-white rounded-2xl shadow p-5 mt-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">합산 점수 달성 확률</h3>
               <span className={`text-xs px-2 py-1 rounded-full border ${
-                ((result.p16_rollNow + result.p19_rollNow) > (result.p16_fromScratch + result.p19_fromScratch))
+                ((result.ecCurrent16 + result.ecCurrent19) < (result.ecNew16 + result.ecNew19))
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-rose-50 text-rose-700 border-rose-200"
               }`}>
-                {((result.p16_rollNow + result.p19_rollNow) > (result.p16_fromScratch + result.p19_fromScratch))
-                  ? "추천"
-                  : "비추천"}
+                {((result.ecCurrent16 + result.ecCurrent19) < (result.ecNew16 + result.ecNew19))
+                  ? "비용 관점: 진행 추천"
+                  : "비용 관점: 중단 권유"}
               </span>
             </div>
 
@@ -809,56 +912,31 @@ const resetAll = React.useCallback(() => {
                 <thead>
                   <tr className="text-left text-gray-500">
                     <th className="py-2">기준</th>
-                    <th className="py-2">지금 가공 (현재 4개)</th>
-                    <th className="py-2">전체 평균 (새 4개 생성)</th>
-                    <th className="py-2">차이</th>
+                    <th className="py-2">지금 가공 (확률·기대비용)</th>
+                    <th className="py-2">새 젬 시작 (기대비용)</th>
+                    <th className="py-2">추천</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-t">
                     <td className="py-2 font-medium">유물젬 (≥16)</td>
-                    <td className="py-2">{fmtPct(result.p16_rollNow)}</td>
-                    <td className="py-2">{fmtPct(result.p16_fromScratch)}</td>
-                    <td className={`py-2 ${result.p16_rollNow >= result.p16_fromScratch ? "text-emerald-600" : "text-rose-600"}`}>
-                      {( (result.p16_rollNow - result.p16_fromScratch) * 100 ).toFixed(2)}%
+                    <td className="py-2">{fmtPct(result.p16_rollNow)} · {fmtGold(result.ecCurrent16)}</td>
+                    <td className="py-2">{fmtGold(result.ecNew16)}</td>
+                    <td className={`py-2 ${result.ecCurrent16 < result.ecNew16 ? "text-emerald-600" : "text-rose-600"}`}>
+                      {result.ecCurrent16 < result.ecNew16 ? "진행 추천" : "중단 권유"}
                     </td>
                   </tr>
                   <tr className="border-t">
                     <td className="py-2 font-medium">고대젬 (≥19)</td>
-                    <td className="py-2">{fmtPct(result.p19_rollNow)}</td>
-                    <td className="py-2">{fmtPct(result.p19_fromScratch)}</td>
-                    <td className={`py-2 ${result.p19_rollNow >= result.p19_fromScratch ? "text-emerald-600" : "text-rose-600"}`}>
-                      {( (result.p19_rollNow - result.p19_fromScratch) * 100 ).toFixed(2)}%
+                    <td className="py-2">{fmtPct(result.p19_rollNow)} · {fmtGold(result.ecCurrent19)}</td>
+                    <td className="py-2">{fmtGold(result.ecNew19)}</td>
+                    <td className={`py-2 ${result.ecCurrent19 < result.ecNew19 ? "text-emerald-600" : "text-rose-600"}`}>
+                      {result.ecCurrent19 < result.ecNew19 ? "진행 추천" : "중단 권유"}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-
-          </div>
-        )}
-
-        {/* 추천 멘트(목표 관점) */}
-        {result && (
-          <div className="mt-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200">
-            <div className="text-lg font-semibold">추천</div>
-            {(hasRolled && tokens > 0 && result.pRollNow < result.pFromScratch) ? (
-              <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
-                ⚠ 현재 가공 성공 확률이 평균 기댓값보다 낮습니다.<br/>
-                <b>리롤을 사용하는 것을 추천합니다.</b> (보유 토큰: {tokens}개)
-              </div>
-            ) : result.pRollNow < result.pFromScratch ? (
-              <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
-                ⚠ 현재 가공 성공 확률이 평균 기댓값보다 낮습니다.<br/>
-                <b>가공을 중단하실 것을 추천합니다.</b>
-              </div>
-            ) : (
-              <div className="mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
-                {result.recommend === "roll"
-                  ? "✔ 지금은 가공 버튼을 누르는 편이 더 유리합니다."
-                  : "✔ 지금은 리롤 버튼을 누르는 편이 더 유리합니다."}
-              </div>
-            )}
           </div>
         )}
 
