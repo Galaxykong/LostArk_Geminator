@@ -1,9 +1,20 @@
 {
   "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.geminator.site" }],
+      "destination": "https://geminator.site/:path*",
+      "permanent": true
+    },
     { "source": "/sitemap.xml", "destination": "/sitemap-1.xml", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/assets/:path*", "destination": "/assets/:path*" },
+    { "source": "/favicon.ico", "destination": "/favicon.ico" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/sitemap-1.xml", "destination": "/sitemap-1.xml" },
+    { "source": "/vite.svg", "destination": "/vite.svg" },
+    { "source": "/((?!assets/|robots\\.txt|sitemap-1\\.xml|favicon\\.ico|vite\\.svg).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
