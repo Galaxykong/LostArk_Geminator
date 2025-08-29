@@ -1,5 +1,11 @@
 {
   "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.geminator.site" }],
+      "destination": "https://geminator.site/:path*",
+      "permanent": true
+    },
     { "source": "/sitemap.xml", "destination": "/sitemap-1.xml", "permanent": true }
   ],
   "rewrites": [
