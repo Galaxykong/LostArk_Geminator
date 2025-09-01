@@ -1,4 +1,5 @@
 User-agent: *
 Disallow:
-Sitemap: https://www.geminator.site/sitemap-1.xml
+Sitemap: https://geminator.site/sitemap-1.xml
+
 
